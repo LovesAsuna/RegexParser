@@ -48,7 +48,10 @@ interface State {
     val edges: MutableList<Edge>
 }
 
-data class InternalState(override var id: Int, override val edges: MutableList<Edge>) : State {
+data class InternalState(
+    override var id: Int,
+    override val edges: MutableList<Edge> = mutableListOf()
+) : State {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -65,7 +68,7 @@ data class InternalState(override var id: Int, override val edges: MutableList<E
     }
 
     override fun toString(): String {
-        return "state{$id}"
+        return "state{id: $id}"
     }
 }
 
@@ -99,7 +102,7 @@ abstract class AbstractBuilder<T : AutoMata<State, Edge>>(
     }
 ) : AutoMataBuilder<T> {
     private var maxID = 0
-    protected val stateMap = hashMapOf<Int, State>()
+    protected val stateMap = mutableMapOf<Int, State>()
     protected lateinit var startState: State
     protected lateinit var acceptStates: MutableSet<State>
 

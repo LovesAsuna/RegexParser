@@ -11,61 +11,66 @@ interface Converter {
 
     fun minimize(automata: AutoMata<State, Edge>): AutoMata<State, Edge>
 
-    class AttachDFA(
-        startState: State,
-        acceptStates: Set<State>,
-        stateMap: Map<Int, State>,
-        val attachMap: Map<Int, Set<Int>>
-    ) : DFA(
-        startState,
-        acceptStates,
-        stateMap
-    )
-
     // default converter: convert NFA to DFA(might not minimize DFA)
     class DefaultConverter : Converter {
         private var idGenerator: Int = 1
-        private val attachMap = mutableMapOf<Int, Set<Int>>()
-        private val reversedMap = mutableMapOf<Set<Int>, Int>()
+        private val reversedMap = mutableMapOf<Set<State>, Int>()
 
         override fun convert(automata: AutoMata<State, Edge>): AutoMata<State, Edge> {
             automata as NFA
-            val builder = object : AbstractBuilder<AttachDFA>() {
-                override fun build(): AttachDFA = AttachDFA(
+            val builder = object : AbstractBuilder<DFA>(
+                stateCreator = { id, edges ->
+                    StateWrapper(id, mutableSetOf(), edges)
+                }
+            ) {
+                fun addState(wrapper: StateWrapper): AbstractBuilder<DFA> {
+                    stateMap.putIfAbsent(wrapper.id, wrapper)
+                    computeAccept(wrapper.id)
+                    return this
+                }
+
+                fun contains(state: State): Boolean = stateMap.values.contains(state)
+
+                fun computeAccept(id: Int): AbstractBuilder<DFA> {
+                    val wrapper = stateMap[id] as StateWrapper
+                    wrapper.accept = LinkedList(wrapper.states).also { it.retainAll(automata.acceptStates) }.size > 0
+                    return this
+                }
+
+                override fun build(): DFA = DFA(
                     startState,
                     acceptStates,
-                    stateMap,
-                    attachMap
+                    stateMap
                 )
             }
             // calculate available char
             val availableChar = getAvailableChar(automata)
-            val start = StateWrapper(idGenerator++, automata.getFreeStates(mutableSetOf(automata.startState)), automata)
+            // init start state
+            val start =
+                StateWrapper(idGenerator++, automata.getFreeStates(mutableSetOf(automata.startState)).toMutableSet())
+            builder.addState(start).setStartState(start.id)
+            reversedMap[start.states] = start.id
             val acceptStates = mutableSetOf<Int>()
-            builder.setStartState(start.id)
-            attachWrapper(attachMap, start)
-            val queue = LinkedList<StateWrapper>() as Queue<StateWrapper>
-            val allWrapper = mutableSetOf<StateWrapper>()
-            allWrapper.add(start)
+            if (start.accept) {
+                acceptStates.add(start.id)
+            }
             // start BFS
+            val queue = LinkedList<State>() as Queue<State>
             queue.offer(start)
             while (true) {
                 val wrapper = queue.poll()
                 var hasNew = false
                 for (c in availableChar) {
-                    val transferWrapper = getTransferWrapper(wrapper, c, automata)
-                    if (!allWrapper.contains(transferWrapper)) {
-                        builder.addEdge(wrapper.id, c, transferWrapper.id)
-                        attachWrapper(attachMap, transferWrapper)
-                        attachMap[transferWrapper.id]?.also {
-                            if (it canRetain automata.acceptStates) acceptStates.add(transferWrapper.id)
-                        }
-                        allWrapper.add(transferWrapper)
+                    val transferWrapper = getTransferWrapper(wrapper as StateWrapper, c, automata)
+                    if (!builder.contains(transferWrapper)) {
                         hasNew = true
+                        builder.addState(transferWrapper)
+                        if (transferWrapper.accept) {
+                            acceptStates.add(transferWrapper.id)
+                        }
                         queue.offer(transferWrapper)
-                    } else {
-                        builder.addEdge(wrapper.id, c, transferWrapper.id)
                     }
+                    builder.addEdge(wrapper.id, c, transferWrapper.id)
                 }
                 if (!hasNew) break
             }
@@ -74,26 +79,6 @@ interface Converter {
 
         override fun minimize(automata: AutoMata<State, Edge>): AutoMata<State, Edge> {
             TODO("Not yet implemented")
-        }
-
-        private fun getIDSetFromWrapper(wrapper: StateWrapper): Set<Int> =
-            wrapper.states.stream().map { it.id }.collect(Collectors.toSet())
-
-        private fun getIDSetFromStates(states: Set<State>): Set<Int> =
-            states.stream().map { it.id }.collect(Collectors.toSet())
-
-        private fun attachWrapper(attachMap: MutableMap<Int, Set<Int>>, wrapper: StateWrapper) {
-            val set = getIDSetFromWrapper(wrapper)
-            attachMap[wrapper.id] = set
-            reversedMap[set] = wrapper.id
-        }
-
-        private infix fun Set<Int>.canRetain(other: Set<State>): Boolean {
-            val set = LinkedHashSet(this)
-            return set.let {
-                it.retainAll(getIDSetFromStates(other))
-                it.size > 0
-            }
         }
 
         private fun getAvailableChar(automata: NFA): List<List<Char?>> {
@@ -113,30 +98,27 @@ interface Converter {
                     transferSet.addAll(automata.getFreeStates(automata.nextStates(state, c).toMutableSet()))
                 }
             }
-            val id = reversedMap[getIDSetFromStates(transferSet)]
+            val id = reversedMap[transferSet]
             return if (id != null) {
-                StateWrapper(id, transferSet, automata)
+                StateWrapper(id, transferSet)
             } else {
-                StateWrapper(idGenerator++, transferSet, automata)
+                StateWrapper(idGenerator++, transferSet).also {
+                    reversedMap[transferSet] = it.id
+                }
             }
         }
     }
 }
 
 class StateWrapper(
-    val id: Int,
-    val states: Set<State>,
-    automata: NFA
-) {
+    override var id: Int,
+    val states: MutableSet<State>,
+    override val edges: MutableList<Edge> = mutableListOf()
+) : State {
     var accept = false
 
-    init {
-        val temp = HashSet(states)
-        accept = temp.also { it.retainAll(automata.acceptStates) }.size > 0
-    }
-
     override fun toString(): String {
-        return "accept: $accept, state: $states"
+        return "StateWrapper{id: $id, accept: $accept, state: $states}"
     }
 
     override fun equals(other: Any?): Boolean {
