@@ -78,20 +78,34 @@ interface Converter {
         }
 
         override fun minimize(automata: AutoMata<State, Edge>): AutoMata<State, Edge> {
-            TODO("Not yet implemented")
+            // automata must be a DFA
+            val builder = AbstractBuilder.DFABuilder()
+            val transferTable = mutableMapOf<MutableMap<Set<Char?>, Boolean>, PriorityQueue<Int>>()
+            // construct the transfer table
+            for ((index, state) in automata.stateMap) {
+                val map = mutableMapOf<Set<Char?>, Boolean>()
+                for (edge in state.edges) {
+                    val transferState = automata.nextStates(state, edge.symbol).first() as AttachState
+                    map[edge.symbol] = transferState.accept
+                }
+                transferTable.computeIfAbsent(map) { PriorityQueue() }.add(index)
+            }
+            // start build minimize DFA
+
+            return builder.setStartState(automata.startState.id).setAcceptStates(setOf(1)).build()
         }
 
-        private fun getAvailableChar(automata: NFA): List<List<Char?>> {
+        private fun getAvailableChar(automata: AutoMata<State, Edge>): Set<Set<Char?>> {
             return automata.stateMap.values.stream().flatMap {
                 it.edges.stream()
             }.map {
                 it.symbol
             }.filter {
                 !it.contains(null)
-            }.collect(Collectors.toList())
+            }.collect(Collectors.toSet())
         }
 
-        private fun getTransferWrapper(wrapper: StateWrapper, symbol: List<Char?>, automata: NFA): StateWrapper {
+        private fun getTransferWrapper(wrapper: StateWrapper, symbol: Set<Char?>, automata: NFA): StateWrapper {
             val transferSet = mutableSetOf<State>()
             for (state in wrapper.states) {
                 for (c in symbol) {
@@ -112,10 +126,10 @@ interface Converter {
 
 class StateWrapper(
     override var id: Int,
-    val states: MutableSet<State>,
-    override val edges: MutableList<Edge> = mutableListOf()
-) : State {
-    var accept = false
+    override val states: MutableSet<State>,
+    override val edges: MutableList<Edge> = mutableListOf(),
+    override var accept: Boolean = false
+) : AttachState {
 
     override fun toString(): String {
         return "StateWrapper{id: $id, accept: $accept, state: $states}"
