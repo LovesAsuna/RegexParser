@@ -16,11 +16,11 @@ class Closure(private val pattern: AbstractPattern) : AbstractPattern() {
         builder.setStartState(startID)
             .setAcceptStates(setOf(endID))
         nfa.acceptStates.forEach {
-            builder.addEdge(it.id, listOf(null), nfa.startState.id)
-            builder.addEdge(it.id, listOf(null), endID)
+            builder.addEdge(it.id, setOf(null), nfa.startState.id)
+            builder.addEdge(it.id, setOf(null), endID)
         }
-        builder.addEdge(startID, listOf(null), nfa.startState.id)
-        builder.addEdge(startID, listOf(null), endID)
+        builder.addEdge(startID, setOf(null), nfa.startState.id)
+        builder.addEdge(startID, setOf(null), endID)
         return builder.build()
     }
 

@@ -14,7 +14,7 @@ open class NFA(
         val next = mutableSetOf<State>()
         for (edge in state.edges) {
             if (c in edge.symbol) {
-                next.add(getState(edge.next))
+                next.addAll(nextStates(state, edge.symbol))
             }
         }
         return next

@@ -13,7 +13,7 @@ class SingleChar(private val c: Char?) : AbstractPattern() {
         val end = 2
         return builder.setStartState(start)
             .setAcceptStates(setOf(end))
-            .addEdge(start, listOf(c), end)
+            .addEdge(start, setOf(c), end)
             .build()
     }
 

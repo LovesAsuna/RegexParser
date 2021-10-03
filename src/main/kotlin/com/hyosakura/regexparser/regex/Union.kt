@@ -17,13 +17,13 @@ class Union(private val first: AbstractPattern, private val second: AbstractPatt
         val endID = startID + firstNFA.size + secondNFA.size + 1
         builder.setStartState(startID)
             .setAcceptStates(listOf(endID))
-        builder.addEdge(startID, listOf(null), firstNFA.startState.id)
-        builder.addEdge(startID, listOf(null), secondNFA.startState.id)
+        builder.addEdge(startID, setOf(null), firstNFA.startState.id)
+        builder.addEdge(startID, setOf(null), secondNFA.startState.id)
         firstNFA.acceptStates.forEach {
-            builder.addEdge(it.id, listOf(null), endID)
+            builder.addEdge(it.id, setOf(null), endID)
         }
         secondNFA.acceptStates.forEach {
-            builder.addEdge(it.id, listOf(null), endID)
+            builder.addEdge(it.id, setOf(null), endID)
         }
         return builder.build()
     }

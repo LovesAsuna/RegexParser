@@ -22,6 +22,16 @@ interface AutoMata<T : State, V : Edge> {
 
     fun nextStates(state: T, c: Char?): Set<T>
 
+    fun nextStates(state: T, cList: Set<Char?>): Set<T> {
+        val next = mutableSetOf<T>()
+        for (edge in state.edges) {
+            if (cList == edge.symbol) {
+                next.add(getState(edge.next))
+            }
+        }
+        return next
+    }
+
     fun test(string: String): Boolean
 
     companion object {
@@ -46,6 +56,11 @@ fun AutoMata<State, Edge>.offset(value: Int) {
 interface State {
     var id: Int
     val edges: MutableList<Edge>
+}
+
+interface AttachState : State {
+    val states: MutableSet<State>
+    var accept : Boolean
 }
 
 data class InternalState(
@@ -73,11 +88,11 @@ data class InternalState(
 }
 
 interface Edge {
-    val symbol: List<Char?>
+    val symbol: Set<Char?>
     var next: Int
 }
 
-data class InternalEdge(override val symbol: List<Char?>, override var next: Int) : Edge
+data class InternalEdge(override val symbol: Set<Char?>, override var next: Int) : Edge
 
 interface AutoMataBuilder<T : AutoMata<State, Edge>> {
     fun setStartState(stateID: Int): AutoMataBuilder<T>
@@ -86,7 +101,7 @@ interface AutoMataBuilder<T : AutoMata<State, Edge>> {
 
     fun addState(stateID: Int): AutoMataBuilder<T>
 
-    fun addEdge(fromStateID: Int, acceptChar: List<Char?>, toStateID: Int): AutoMataBuilder<T>
+    fun addEdge(fromStateID: Int, acceptChar: Set<Char?>, toStateID: Int): AutoMataBuilder<T>
 
     fun addFromAutoMata(autoMata: AutoMata<State, Edge>, offset: Int): AutoMataBuilder<T>
 
@@ -97,7 +112,7 @@ abstract class AbstractBuilder<T : AutoMata<State, Edge>>(
     val stateCreator: (id: Int, edges: MutableList<Edge>) -> State = { id, edges ->
         InternalState(id, edges)
     },
-    val edgeCreator: (symbol: List<Char?>, next: Int) -> Edge = { symbol, next ->
+    val edgeCreator: (symbol: Set<Char?>, next: Int) -> Edge = { symbol, next ->
         InternalEdge(symbol, next)
     }
 ) : AutoMataBuilder<T> {
@@ -134,7 +149,7 @@ abstract class AbstractBuilder<T : AutoMata<State, Edge>>(
         return this
     }
 
-    override fun addEdge(fromStateID: Int, acceptChar: List<Char?>, toStateID: Int): AbstractBuilder<T> {
+    override fun addEdge(fromStateID: Int, acceptChar: Set<Char?>, toStateID: Int): AbstractBuilder<T> {
         val from = stateMap.computeIfAbsent(fromStateID) { stateCreator(fromStateID, mutableListOf()) }
         stateMap.computeIfAbsent(toStateID) { stateCreator(toStateID, mutableListOf()) }
         maxID = maxID.coerceAtLeast(fromStateID).coerceAtLeast(toStateID)

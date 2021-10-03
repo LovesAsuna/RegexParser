@@ -19,7 +19,7 @@ class Concat(private val first: AbstractPattern, private val second: AbstractPat
                 it.id
             }.collect(Collectors.toList()))
         firstNFA.acceptStates.forEach {
-            builder.addEdge(it.id, listOf(null), secondNFA.startState.id)
+            builder.addEdge(it.id, setOf(null), secondNFA.startState.id)
         }
         return builder.build()
     }
