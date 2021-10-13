@@ -26,7 +26,14 @@ class RegexParser(patternString: String) {
                 }
                 Token.TokenType.RIGHT_PAREN -> {
                     if (opStack.isEmpty()) throw RuntimeException("Brackets do not match")
-                    val op = opStack.pop()
+                    var op = opStack.pop()
+                    if (op == '|') {
+                        val after = patternStack.pop()
+                        val pre = patternStack.pop()
+                        patternStack.push(Union(pre, after))
+                        op = opStack.pop()
+                        numInBracket--
+                    }
                     if (op != '(') throw RuntimeException("Brackets do not match")
                     concatAll(false)
                 }
@@ -96,6 +103,8 @@ class RegexParser(patternString: String) {
                             list.add(SingleChar(it))
                         }
                         patternStack.push(Choose(list))
+                        choose = false
+                        numInChoose = 0
                         token = advance()
                         continue
                     }
@@ -131,6 +140,7 @@ class RegexParser(patternString: String) {
     }
 
     private fun chooseAll() {
+        if (!choose) return
         val patterns = mutableListOf<AbstractPattern>()
         while (numInChoose-- > 0) {
             patterns.add(patternStack.pop())
