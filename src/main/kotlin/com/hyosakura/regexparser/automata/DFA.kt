@@ -22,7 +22,7 @@ open class DFA(
     override fun test(string: String): Boolean {
         var state: State = currentState
         for (c in string) {
-            state = nextStates(state, c).first()
+            state = nextStates(state, c).firstOrNull() ?: return false
         }
         return state in acceptStates
     }
