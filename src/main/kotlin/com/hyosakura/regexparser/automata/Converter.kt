@@ -17,6 +17,7 @@ interface Converter {
         private val reversedMap = mutableMapOf<Set<State>, Int>()
 
         override fun convert(automata: AutoMata<State, Edge>): AutoMata<State, Edge> {
+            idGenerator = 1
             automata as NFA
             val builder = object : AbstractBuilder<DFA>(
                 stateCreator = { id, edges ->
