@@ -185,7 +185,7 @@ interface Converter {
             }
         }
 
-        private fun getAvailableChar(automata: AutoMata<State, Edge>): Set<Set<Char?>> {
+        fun getAvailableChar(automata: AutoMata<State, Edge>): Set<Set<Char?>> {
             return automata.stateMap.values.stream().flatMap {
                 it.edges.stream()
             }.map {
