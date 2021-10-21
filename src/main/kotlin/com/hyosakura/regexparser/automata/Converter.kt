@@ -135,7 +135,6 @@ interface Converter {
             return automata
         }
 
-
         private fun group(stateSet: Set<State>, automata: AutoMata<State, Edge>): List<Set<State>> {
             val list = mutableListOf<Set<State>>()
             val availableChar = getAvailableChar(automata)
@@ -157,31 +156,16 @@ interface Converter {
             automata: AutoMata<State, Edge>,
             char: Set<Char?>
         ): List<Set<State>> {
-            val acceptSet = mutableSetOf<State>()
-            val nonAcceptSet = mutableSetOf<State>()
-            val emptySet = mutableSetOf<State>()
+            val list = mutableListOf<Set<State>>()
+            val map = mutableMapOf<Int, MutableSet<State>>()
             for (state in stateSet) {
                 val nextState = automata.nextStates(state, char).firstOrNull() as? AttachState
-                if (nextState != null) {
-                    if (nextState.accept) {
-                        acceptSet.add(state)
-                    } else {
-                        nonAcceptSet.add(state)
-                    }
-                } else {
-                    emptySet.add(state)
-                }
+                map.computeIfAbsent(nextState?.id ?: -1) {
+                    mutableSetOf()
+                }.add(state)
             }
-            return mutableListOf<Set<State>>().also {
-                if (acceptSet.isNotEmpty()) {
-                    it.add(acceptSet)
-                }
-                if (nonAcceptSet.isNotEmpty()) {
-                    it.add(nonAcceptSet)
-                }
-                if (emptySet.isNotEmpty()) {
-                    it.add(emptySet)
-                }
+            return list.also {
+                it.addAll(map.values)
             }
         }
 
