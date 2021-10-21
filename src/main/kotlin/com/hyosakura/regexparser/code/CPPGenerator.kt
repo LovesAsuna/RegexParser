@@ -12,6 +12,7 @@ class CPPGenerator : CodeGenerator {
     private val builder = StringBuilder()
 
     override fun generate(automata: AutoMata<State, Edge>): String {
+        builder.clear()
         generateStart()
         generateBinarySearch()
         generateMain(automata)
