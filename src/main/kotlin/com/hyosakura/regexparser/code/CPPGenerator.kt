@@ -138,13 +138,15 @@ int main() {
         }
         val builder = StringBuilder()
         val iterator = edges.iterator()
-        builder.append(`if`(iterator.next()))
+        if (iterator.hasNext()) {
+            builder.append(`if`(iterator.next()))
+        }
         if (edges.size > 1) {
             while (iterator.hasNext()) {
                 builder.append(elseIf(iterator.next()))
             }
+            builder.append(`else`(-1))
         }
-        builder.append(`else`(-1))
         return """
             case $id: {
                 $builder
