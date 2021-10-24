@@ -13,7 +13,7 @@ open class NFA(
     override fun nextStates(state: State, c: Char?): Set<State> {
         val next = mutableSetOf<State>()
         for (edge in state.edges) {
-            if (c in edge.symbol) {
+            if (c in edge.symbol || edge.symbol.contains(0.toChar())) {
                 next.addAll(nextStates(state, edge.symbol))
             }
         }

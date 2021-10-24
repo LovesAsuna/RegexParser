@@ -75,7 +75,7 @@ class RegexParser(patternString: String) {
                         if (topOP == '|') {
                             if (patternStack.isEmpty()) throw RuntimeException("The last character of union operation is empty")
                             val prePattern = patternStack.pop()
-                            val union = Union(prePattern, SingleChar(token.value))
+                            val union = Union(prePattern, SingleChar(token.value.let { if (it == '.') 0.toChar() else it }))
                             patternStack.push(union)
                             opStack.pop()
                             token = advance()
@@ -110,7 +110,7 @@ class RegexParser(patternString: String) {
                     }
                     if (bracket) numInBracket++
                     if (choose) numInChoose++
-                    patternStack.push(SingleChar(token.value))
+                    patternStack.push(SingleChar(token.value.let { if (it == '.') 0.toChar() else it }))
                 }
             }
             token = advance()

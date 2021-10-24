@@ -12,7 +12,7 @@ open class DFA(
 
     override fun nextStates(state: State, c: Char?): Set<State> {
         for (edge in state.edges) {
-            if (c in edge.symbol) {
+            if (c in edge.symbol || edge.symbol.contains(0.toChar())) {
                 return nextStates(state, edge.symbol)
             }
         }

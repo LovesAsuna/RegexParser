@@ -17,5 +17,17 @@ class SingleChar(private val c: Char?) : AbstractPattern() {
             .build()
     }
 
-    override fun toString(): String = c?.toString() ?: ""
+    override fun toString(): String {
+        return when (c) {
+            null -> {
+                ""
+            }
+            0.toChar() -> {
+                "[.]"
+            }
+            else -> {
+                c.toString()
+            }
+        }
+    }
 }
